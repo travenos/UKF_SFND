@@ -51,6 +51,7 @@ class UKF {
   }
 
 private:
+  void Initialize(const MeasurementPackage& meas_package);
   void UpdateCommon(const Eigen::VectorXd& z, const Eigen::MatrixXd& Zsig, const Eigen::MatrixXd& R);
 
   // initially set to false, set to true in first call of ProcessMeasurement

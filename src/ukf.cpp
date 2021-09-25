@@ -1,6 +1,5 @@
 #include "ukf.h"
 #include "Eigen/Dense"
-#include <iostream> // TODO!!! remove
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -23,7 +22,8 @@ static double NormalizeAngle(double angle)
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF() {
+UKF::UKF()
+{
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
 
@@ -36,16 +36,16 @@ UKF::UKF() {
   use_radar_ = true;
 
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd::Zero(5);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd::Identity(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 3; //30; //TODO!!!
+  std_a_ = 3;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = M_PI; //30; //TODO!!!
+  std_yawdd_ = 2 * M_PI / 3 ;
   
   /**
    * DO NOT MODIFY measurement noise values below.
@@ -71,10 +71,6 @@ UKF::UKF() {
    * End DO NOT MODIFY section for measurement noise values 
    */
   
-  /**
-   * TODO: Complete the initialization. See ukf.h for other member properties.
-   * Hint: one or more values initialized above might be wildly off...
-   */
   // State dimension
   n_x_ = static_cast<int>(x_.size());
 
@@ -110,15 +106,13 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package) {
             UpdateRadar(meas_package);
             break;
     }
-    if (is_initialized_)
-    {
-        time_us_ = meas_package.timestamp_;
-    }
+    time_us_ = meas_package.timestamp_;
 }
 
-void UKF::Prediction(double delta_t) {
+void UKF::Prediction(double delta_t)
+{
   /**
-   * TODO: Complete this function! Estimate the object's location. 
+   * Estimate the object's location.
    * Modify the state vector, x_. Predict sigma points, the state, 
    * and the state covariance matrix.
    */
@@ -192,43 +186,18 @@ void UKF::Prediction(double delta_t) {
     }
 }
 
-void UKF::UpdateLidar(const MeasurementPackage& meas_package) {
+
+void UKF::UpdateLidar(const MeasurementPackage& meas_package)
+{
+    /**
+     * TODO: Complete this function! Use lidar data to update the belief
+     * about the object's position. Modify the state vector, x_, and
+     * covariance, P_.
+     * You can also calculate the lidar NIS, if desired.
+     */
     if (!is_initialized_)
     {
-        if (time_us_ == -1)
-        {
-            x_(0) = meas_package.raw_measurements_(0);
-            x_(1) = meas_package.raw_measurements_(1);
-        }
-        else if (meas_package.timestamp_ - time_us_ > 0)
-        {
-            const double x_old = x_(0);
-            const double y_old = x_(1);
-            const double delta_t = (meas_package.timestamp_ - time_us_) * 1e-6;
-            const double x = meas_package.raw_measurements_(0);
-            const double y = meas_package.raw_measurements_(1);
-            const double dx = (x - x_old);
-            const double dy = (y - y_old);
-            const double d = std::sqrt(dx * dx + dy * dy);
-            x_(0) = x;
-            x_(1) = y;
-            x_(2) = d / delta_t;
-            x_(3) = std::atan2(dy, dx);
-            x_(4) = 0;
-
-            P_ = MatrixXd::Identity(P_.rows(), P_.cols());
-            P_(0, 0) = std_laspx_ * std_laspx_;
-            P_(1, 1) = std_laspy_ * std_laspy_;
-
-
-            P_(2, 2) =
-//            P_(2, 2) = 25; // TODO!!!
-//            P_(3, 3) = 0.009;//0.1; // TODO!!!
-//            P_(4, 4) = 0.25; // TODO!!!
-
-            is_initialized_ = true;
-        }
-        time_us_ = meas_package.timestamp_; // TODO!!!
+        Initialize(meas_package);
         return;
     }
 
@@ -244,43 +213,19 @@ void UKF::UpdateLidar(const MeasurementPackage& meas_package) {
     R(1, 1) = std_laspy_ * std_laspy_;
 
     UpdateCommon(meas_package.raw_measurements_, Zsig, R);
-
-  /**
-   * TODO: Complete this function! Use lidar data to update the belief 
-   * about the object's position. Modify the state vector, x_, and 
-   * covariance, P_.
-   * You can also calculate the lidar NIS, if desired.
-   */
 }
 
-void UKF::UpdateRadar(const MeasurementPackage& meas_package) {
+void UKF::UpdateRadar(const MeasurementPackage& meas_package)
+{
+    /**
+     * TODO: Complete this function! Use radar data to update the belief
+     * about the object's position. Modify the state vector, x_, and
+     * covariance, P_.
+     * You can also calculate the radar NIS, if desired.
+     */
     if (!is_initialized_)
     {
-//        if (time_us_ == -1)
-//        {
-//            x_(0) = meas_package.raw_measurements_(0) * std::cos(meas_package.raw_measurements_(1));
-//            x_(1) = meas_package.raw_measurements_(0) * std::sin(meas_package.raw_measurements_(1));
-//        }
-//        else if (meas_package.timestamp_ - time_us_ > 0)
-//        {
-//            const double x_old = x_(0);
-//            const double y_old = x_(1);
-//            const double delta_t = (meas_package.timestamp_ - time_us_) * 1e-6;
-//            const double x = meas_package.raw_measurements_(0) * std::cos(meas_package.raw_measurements_(1));
-//            const double y = meas_package.raw_measurements_(0) * std::sin(meas_package.raw_measurements_(1));
-//            const double dx = (x - x_old);
-//            const double dy = (y - y_old);
-//            const double d = std::sqrt(dx * dx + dy * dy);
-//            x_(0) = x;
-//            x_(1) = y;
-//            x_(2) = d / delta_t;
-//            x_(3) = std::atan2(dy, dx);
-//            x_(4) = 0;
-
-//            P_ = MatrixXd::Identity(P_.rows(), P_.cols());
-
-//            is_initialized_ = true;
-//        }
+        // Initialize only with the first lidar measurement
         return;
     }
 
@@ -308,13 +253,25 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package) {
     R(2, 2) = std_radrd_ * std_radrd_;
 
     UpdateCommon(meas_package.raw_measurements_, Zsig, R);
+}
 
-  /**
-   * TODO: Complete this function! Use radar data to update the belief 
-   * about the object's position. Modify the state vector, x_, and 
-   * covariance, P_.
-   * You can also calculate the radar NIS, if desired.
-   */
+void UKF::Initialize(const MeasurementPackage& meas_package)
+{
+    x_ = VectorXd::Zero(n_x_);
+    x_(0) = meas_package.raw_measurements_(0);
+    x_(1) = meas_package.raw_measurements_(1);
+    x_(2) = 6; // Assume average velocity in m/s
+    x_(3) = 0; // Assume average angle in rad
+    x_(4) = 0; // Assume average angle velocity in rad / s
+
+    P_ = MatrixXd::Zero(n_x_, n_x_);
+    P_(0, 0) = std_laspx_ * std_laspx_;
+    P_(1, 1) = std_laspy_ * std_laspy_;
+    P_(2, 2) = 6 / 2 * 6 / 2; // Assume initial uncertaity of the velocity
+    P_(3, 3) = M_PI / 6 / 2 * M_PI / 6 / 2; // Assume initial uncertaity of the yaw angle
+    P_(4, 4) = M_PI / 4 / 2 * M_PI / 4 / 2; // Assume initial uncertaity of the angle velocity
+
+    is_initialized_ = true;
 }
 
 void UKF::UpdateCommon(const VectorXd& z, const MatrixXd& Zsig, const MatrixXd& R)
