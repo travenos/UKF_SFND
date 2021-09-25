@@ -255,6 +255,14 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
     UpdateCommon(meas_package.raw_measurements_, Zsig, R);
 }
 
+double UKF::GetNisOverThresholdPart() const
+{
+    constexpr double threshold = 7.815;
+
+    double over_threshold_count = std::count_if(NIS_.begin(), NIS_.end(), [](double val){return val > threshold;});
+    return over_threshold_count / NIS_.size();
+}
+
 void UKF::Initialize(const MeasurementPackage& meas_package)
 {
     x_ = VectorXd::Zero(n_x_);
@@ -313,4 +321,8 @@ void UKF::UpdateCommon(const VectorXd& z, const MatrixXd& Zsig, const MatrixXd& 
 
     x_ += K * z_res;
     P_ -= K * S * K.transpose();
+
+    // Calculation of Normalized Innovation Squared (NIS)
+    double eps = z_res.transpose() * S.inverse() * z_res;
+    NIS_.push_back(eps);
 }

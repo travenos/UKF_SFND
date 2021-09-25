@@ -1,6 +1,7 @@
 /* \author Aaron Brown */
 // Handle logic for creating traffic on highway and animating it
 
+#include <iostream>
 #include "render/render.h"
 #include "sensors/lidar.h"
 #include "tools.h"
@@ -104,6 +105,14 @@ public:
 		car2.render(viewer);
 		car3.render(viewer);
 	}
+
+    ~Highway()
+    {
+        for (const auto& car : traffic)
+        {
+            std::cout << "Car " << car.name << " NIS over threshold percent: " << car.ukf.GetNisOverThresholdPart() * 100 << " %" << std::endl;
+        }
+    }
 	
 	void stepHighway(double egoVelocity, long long timestamp, int frame_per_sec, pcl::visualization::PCLVisualizer::Ptr& viewer)
 	{

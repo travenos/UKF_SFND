@@ -1,6 +1,7 @@
 #ifndef UKF_H
 #define UKF_H
 
+#include <vector>
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
@@ -49,6 +50,12 @@ class UKF {
   {
       return x_;
   }
+
+  /**
+   * Returns part of NIS mesurements, which are above 95% line
+   * @return part of NIS mesurements, which are above 95% line
+   */
+  double GetNisOverThresholdPart() const;
 
 private:
   void Initialize(const MeasurementPackage& meas_package);
@@ -107,6 +114,8 @@ private:
 
   // Sigma point spreading parameter
   double lambda_;
+
+  std::vector<double> NIS_;
 };
 
 #endif  // UKF_H
