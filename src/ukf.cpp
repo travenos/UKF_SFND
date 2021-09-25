@@ -91,10 +91,6 @@ UKF::UKF()
 UKF::~UKF() {}
 
 void UKF::ProcessMeasurement(const MeasurementPackage& meas_package) {
-  /**
-   * TODO: Complete this function! Make sure you switch between lidar and radar
-   * measurements.
-   */
     const double delta_t = (meas_package.timestamp_ - time_us_) * 1e-6;
     Prediction(delta_t);
     switch (meas_package.sensor_type_)
@@ -190,10 +186,9 @@ void UKF::Prediction(double delta_t)
 void UKF::UpdateLidar(const MeasurementPackage& meas_package)
 {
     /**
-     * TODO: Complete this function! Use lidar data to update the belief
+     * Use lidar data to update the belief
      * about the object's position. Modify the state vector, x_, and
      * covariance, P_.
-     * You can also calculate the lidar NIS, if desired.
      */
     if (!is_initialized_)
     {
@@ -218,10 +213,9 @@ void UKF::UpdateLidar(const MeasurementPackage& meas_package)
 void UKF::UpdateRadar(const MeasurementPackage& meas_package)
 {
     /**
-     * TODO: Complete this function! Use radar data to update the belief
+     * Use radar data to update the belief
      * about the object's position. Modify the state vector, x_, and
      * covariance, P_.
-     * You can also calculate the radar NIS, if desired.
      */
     if (!is_initialized_)
     {
