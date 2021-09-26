@@ -115,6 +115,13 @@ private:
   // Sigma point spreading parameter
   double lambda_;
 
+  // Lidar measurement noise matrix
+  Eigen::MatrixXd R_lidar_;
+
+  // Radar measurement noise matrix
+  Eigen::MatrixXd R_radar_;
+
+  // Normalized Innovation Squared (NIS) values for every step
   std::vector<double> NIS_;
 };
 

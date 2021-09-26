@@ -86,6 +86,16 @@ UKF::UKF()
   weights_.tail(weights_.size() - 1) = 0.5 / (lambda_ + n_aug_) * VectorXd::Ones(weights_.size() - 1);
 
   Xsig_pred_ = MatrixXd::Zero(n_x_, 2 * n_aug_ + 1);
+
+  // Measurement noise matrices
+  R_lidar_ = MatrixXd::Zero(2, 2);
+  R_lidar_(0, 0) = std_laspx_ * std_laspx_;
+  R_lidar_(1, 1) = std_laspy_ * std_laspy_;
+
+  R_radar_ = MatrixXd::Zero(3, 3);
+  R_radar_(0, 0) = std_radr_ * std_radr_;
+  R_radar_(1, 1) = std_radphi_ * std_radphi_;
+  R_radar_(2, 2) = std_radrd_ * std_radrd_;
 }
 
 UKF::~UKF() {}
@@ -202,12 +212,7 @@ void UKF::UpdateLidar(const MeasurementPackage& meas_package)
     // Transformation of sigma points into measurement space
     Zsig = Xsig_pred_.topLeftCorner(n_z, Zsig.cols());
 
-    // Measurement noise matrix
-    MatrixXd R = MatrixXd::Zero(n_z, n_z);
-    R(0, 0) = std_laspx_ * std_laspx_;
-    R(1, 1) = std_laspy_ * std_laspy_;
-
-    UpdateCommon(meas_package.raw_measurements_, Zsig, R);
+    UpdateCommon(meas_package.raw_measurements_, Zsig, R_lidar_);
 }
 
 void UKF::UpdateRadar(const MeasurementPackage& meas_package)
@@ -240,13 +245,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
         Zsig(2, i) = std::fabs(Zsig(0, i)) > NEAR_ZERO_VALUE ? (px * std::cos(psi) * v + py * std::sin(psi) * v) / Zsig(0, i) : 0;
     }
 
-    // Measurement noise matrix
-    MatrixXd R = MatrixXd::Zero(n_z, n_z);
-    R(0, 0) = std_radr_ * std_radr_;
-    R(1, 1) = std_radphi_ * std_radphi_;
-    R(2, 2) = std_radrd_ * std_radrd_;
-
-    UpdateCommon(meas_package.raw_measurements_, Zsig, R);
+    UpdateCommon(meas_package.raw_measurements_, Zsig, R_radar_);
 }
 
 double UKF::GetNisOverThresholdPart() const
