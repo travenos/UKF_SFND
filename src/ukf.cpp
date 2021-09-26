@@ -100,7 +100,8 @@ UKF::UKF()
 
 UKF::~UKF() {}
 
-void UKF::ProcessMeasurement(const MeasurementPackage& meas_package) {
+void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
+{
     const double delta_t = (meas_package.timestamp_ - time_us_) * 1e-6;
     Prediction(delta_t);
     switch (meas_package.sensor_type_)
