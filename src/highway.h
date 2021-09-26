@@ -31,14 +31,14 @@ public:
 	int projectedSteps = 0;
 	// --------------------------------
 
-	Highway(pcl::visualization::PCLVisualizer::Ptr& viewer)
+    Highway(pcl::visualization::PCLVisualizer::Ptr& viewer, UKF::Mode ukf_mode = UKF::LidarAndRadar)
 	{
 
 		tools = Tools();
 	
-		egoCar = Car(Vect3(0, 0, 0), Vect3(4, 2, 2), Color(0, 1, 0), 0, 0, 2, "egoCar");
+        egoCar = Car(Vect3(0, 0, 0), Vect3(4, 2, 2), Color(0, 1, 0), 0, 0, 2, "egoCar", ukf_mode);
 		
-		Car car1(Vect3(-10, 4, 0), Vect3(4, 2, 2), Color(0, 0, 1), 5, 0, 2, "car1");
+        Car car1(Vect3(-10, 4, 0), Vect3(4, 2, 2), Color(0, 0, 1), 5, 0, 2, "car1", ukf_mode);
 		
 		std::vector<accuation> car1_instructions;
 		accuation a = accuation(0.5*1e6, 0.5, 0.0);
@@ -53,12 +53,12 @@ public:
 		car1.setInstructions(car1_instructions);
 		if( trackCars[0] )
 		{
-			UKF ukf1;
+            UKF ukf1{ukf_mode};
 			car1.setUKF(ukf1);
 		}
 		traffic.push_back(car1);
 		
-		Car car2(Vect3(25, -4, 0), Vect3(4, 2, 2), Color(0, 0, 1), -6, 0, 2, "car2");
+        Car car2(Vect3(25, -4, 0), Vect3(4, 2, 2), Color(0, 0, 1), -6, 0, 2, "car2", ukf_mode);
 		std::vector<accuation> car2_instructions;
 		a = accuation(4.0*1e6, 3.0, 0.0);
 		car2_instructions.push_back(a);
@@ -67,12 +67,12 @@ public:
 		car2.setInstructions(car2_instructions);
 		if( trackCars[1] )
 		{
-			UKF ukf2;
-			car2.setUKF(ukf2);
+            UKF ukf2{ukf_mode};
+            car2.setUKF(ukf2);
 		}
 		traffic.push_back(car2);
 	
-		Car car3(Vect3(-12, 0, 0), Vect3(4, 2, 2), Color(0, 0, 1), 1, 0, 2, "car3");
+        Car car3(Vect3(-12, 0, 0), Vect3(4, 2, 2), Color(0, 0, 1), 1, 0, 2, "car3", ukf_mode);
 		std::vector<accuation> car3_instructions;
 		a = accuation(0.5*1e6, 2.0, 1.0);
 		car3_instructions.push_back(a);
@@ -91,7 +91,7 @@ public:
 		car3.setInstructions(car3_instructions);
 		if( trackCars[2] )
 		{
-			UKF ukf3;
+            UKF ukf3{ukf_mode};
 			car3.setUKF(ukf3);
 		}
 		traffic.push_back(car3);

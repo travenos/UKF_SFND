@@ -22,7 +22,8 @@ static double NormalizeAngle(double angle)
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF()
+UKF::UKF(Mode mode) :
+    mode_{mode}
 {
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
@@ -107,13 +108,20 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     switch (meas_package.sensor_type_)
     {
         case MeasurementPackage::LASER:
-            UpdateLidar(meas_package);
+            if (mode_ != RadarOnly)
+            {
+                UpdateLidar(meas_package);
+                time_us_ = meas_package.timestamp_;
+            }
             break;
         case MeasurementPackage::RADAR:
-            UpdateRadar(meas_package);
+            if (mode_ != LidarOnly)
+            {
+                UpdateRadar(meas_package);
+                time_us_ = meas_package.timestamp_;
+            }
             break;
     }
-    time_us_ = meas_package.timestamp_;
 }
 
 void UKF::Prediction(double delta_t)
@@ -203,7 +211,7 @@ void UKF::UpdateLidar(const MeasurementPackage& meas_package)
      */
     if (!is_initialized_)
     {
-        Initialize(meas_package);
+        Initialize(meas_package.raw_measurements_(0), meas_package.raw_measurements_(1), std_laspx_, std_laspy_);
         return;
     }
 
@@ -225,7 +233,15 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
      */
     if (!is_initialized_)
     {
-        // Initialize only with the first lidar measurement
+        // If using lidar, initialize with its first measurement
+        if (mode_ == RadarOnly)
+        {
+            constexpr double std_x = 1;
+            constexpr double std_y = 1;
+            const double r = meas_package.raw_measurements_(0);
+            const double psi = meas_package.raw_measurements_(1);
+            Initialize(r * std::cos(psi), r * std::sin(psi), std_x, std_y);
+        }
         return;
     }
 
@@ -257,18 +273,18 @@ double UKF::GetNisOverThresholdPart() const
     return over_threshold_count / NIS_.size();
 }
 
-void UKF::Initialize(const MeasurementPackage& meas_package)
+void UKF::Initialize(double x, double y, double std_x, double std_y)
 {
     x_ = VectorXd::Zero(n_x_);
-    x_(0) = meas_package.raw_measurements_(0);
-    x_(1) = meas_package.raw_measurements_(1);
+    x_(0) = x;
+    x_(1) = y;
     x_(2) = 6; // Assume average velocity in m/s
     x_(3) = 0; // Assume average angle in rad
     x_(4) = 0; // Assume average angle velocity in rad / s
 
     P_ = MatrixXd::Zero(n_x_, n_x_);
-    P_(0, 0) = std_laspx_ * std_laspx_;
-    P_(1, 1) = std_laspy_ * std_laspy_;
+    P_(0, 0) = std_x * std_x;
+    P_(1, 1) = std_y * std_y;
     P_(2, 2) = 6 / 2 * 6 / 2; // Assume initial uncertaity of the velocity
     P_(3, 3) = M_PI / 6 / 2 * M_PI / 6 / 2; // Assume initial uncertaity of the yaw angle
     P_(4, 4) = M_PI / 4 / 2 * M_PI / 4 / 2; // Assume initial uncertaity of the angle velocity

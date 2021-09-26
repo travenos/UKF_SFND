@@ -3,10 +3,23 @@
 // for exploring self-driving car sensors
 
 //#include "render/render.h"
+#include <cstring>
 #include "highway.h"
 
 int main(int argc, char** argv)
 {
+    UKF::Mode ukf_mode = UKF::LidarAndRadar;
+    if (argc > 1)
+    {
+        if (std::strcmp(argv[1], "--lidar-only") == 0)
+        {
+            ukf_mode = UKF::LidarOnly;
+        }
+        else if (std::strcmp(argv[1], "--radar-only") == 0)
+        {
+            ukf_mode = UKF::RadarOnly;
+        }
+    }
 
 	pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0, 0, 0);
@@ -16,7 +29,7 @@ int main(int argc, char** argv)
 	float x_pos = 0;
 	viewer->setCameraPosition ( x_pos-26, 0, 15.0, x_pos+25, 0, 0, 0, 0, 1);
 
-	Highway highway(viewer);
+    Highway highway(viewer, ukf_mode);
 
 	//initHighway(viewer);
 

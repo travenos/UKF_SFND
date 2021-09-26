@@ -81,8 +81,8 @@ struct Car
 		: position(Vect3(0,0,0)), dimensions(Vect3(0,0,0)), color(Color(0,0,0))
 	{}
  
-	Car(Vect3 setPosition, Vect3 setDimensions, Color setColor, float setVelocity, float setAngle, float setLf, std::string setName)
-		: position(setPosition), dimensions(setDimensions), color(setColor), velocity(setVelocity), angle(setAngle), Lf(setLf), name(setName)
+        Car(Vect3 setPosition, Vect3 setDimensions, Color setColor, float setVelocity, float setAngle, float setLf, std::string setName, UKF::Mode ukf_mode = UKF::LidarAndRadar)
+                : position(setPosition), dimensions(setDimensions), name(setName), color(setColor), velocity(setVelocity), angle(setAngle), Lf(setLf), ukf(ukf_mode)
 	{
 		orientation = getQuaternion(angle);
 		acceleration = 0;
@@ -142,9 +142,9 @@ struct Car
 			instructions.push_back(a);
 	}
 
-	void setUKF(UKF tracker)
+        void setUKF(const UKF& tracker)
 	{
-		ukf = tracker;
+                ukf = tracker;
 	}
 
 	void move(float dt, int time_us)

@@ -5,12 +5,17 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
-class UKF {
+class UKF
+{
  public:
+  enum Mode
+  {
+      LidarAndRadar, LidarOnly, RadarOnly
+  };
   /**
    * Constructor
    */
-  UKF();
+  UKF(Mode mode = LidarAndRadar);
 
   /**
    * Destructor
@@ -58,8 +63,11 @@ class UKF {
   double GetNisOverThresholdPart() const;
 
 private:
-  void Initialize(const MeasurementPackage& meas_package);
+  void Initialize(double x, double y, double std_x, double std_y);
   void UpdateCommon(const Eigen::VectorXd& z, const Eigen::MatrixXd& Zsig, const Eigen::MatrixXd& R);
+
+  // using lidar, radar or both measurements
+  Mode mode_;
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
