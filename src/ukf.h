@@ -1,15 +1,21 @@
 #ifndef UKF_H
 #define UKF_H
 
+#include <vector>
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
-class UKF {
+class UKF
+{
  public:
+  enum Mode
+  {
+      LidarAndRadar, LidarOnly, RadarOnly
+  };
   /**
    * Constructor
    */
-  UKF();
+  UKF(Mode mode = LidarAndRadar);
 
   /**
    * Destructor
@@ -20,7 +26,7 @@ class UKF {
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(const MeasurementPackage& meas_package);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
@@ -33,14 +39,35 @@ class UKF {
    * Updates the state and the state covariance matrix using a laser measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateLidar(MeasurementPackage meas_package);
+  void UpdateLidar(const MeasurementPackage& meas_package);
 
   /**
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateRadar(MeasurementPackage meas_package);
+  void UpdateRadar(const MeasurementPackage& meas_package);
 
+  /**
+   * Returns current estimated state vector
+   * @return current state vector
+   */
+  const Eigen::VectorXd& GetX() const
+  {
+      return x_;
+  }
+
+  /**
+   * Returns part of NIS mesurements, which are above 95% line
+   * @return part of NIS mesurements, which are above 95% line
+   */
+  double GetNisOverThresholdPart() const;
+
+private:
+  void Initialize(double x, double y, double std_x, double std_y);
+  void UpdateCommon(const Eigen::VectorXd& z, const Eigen::MatrixXd& Zsig, const Eigen::MatrixXd& R);
+
+  // using lidar, radar or both measurements
+  Mode mode_;
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
@@ -95,6 +122,15 @@ class UKF {
 
   // Sigma point spreading parameter
   double lambda_;
+
+  // Lidar measurement noise matrix
+  Eigen::MatrixXd R_lidar_;
+
+  // Radar measurement noise matrix
+  Eigen::MatrixXd R_radar_;
+
+  // Normalized Innovation Squared (NIS) values for every step
+  std::vector<double> NIS_;
 };
 
 #endif  // UKF_H

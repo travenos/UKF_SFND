@@ -66,8 +66,8 @@ rmarker Tools::radarSense(Car& car, Car ego, pcl::visualization::PCLVisualizer::
 void Tools::ukfResults(Car car, pcl::visualization::PCLVisualizer::Ptr& viewer, double time, int steps)
 {
 	UKF ukf = car.ukf;
-	viewer->addSphere(pcl::PointXYZ(ukf.x_[0],ukf.x_[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf");
-	viewer->addArrow(pcl::PointXYZ(ukf.x_[0], ukf.x_[1],3.5), pcl::PointXYZ(ukf.x_[0]+ukf.x_[2]*cos(ukf.x_[3]),ukf.x_[1]+ukf.x_[2]*sin(ukf.x_[3]),3.5), 0, 1, 0, car.name+"_ukf_vel");
+    viewer->addSphere(pcl::PointXYZ(ukf.GetX()[0],ukf.GetX()[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf");
+    viewer->addArrow(pcl::PointXYZ(ukf.GetX()[0], ukf.GetX()[1],3.5), pcl::PointXYZ(ukf.GetX()[0]+ukf.GetX()[2]*cos(ukf.GetX()[3]),ukf.GetX()[1]+ukf.GetX()[2]*sin(ukf.GetX()[3]),3.5), 0, 1, 0, car.name+"_ukf_vel");
 	if(time > 0)
 	{
 		double dt = time/steps;
@@ -75,7 +75,7 @@ void Tools::ukfResults(Car car, pcl::visualization::PCLVisualizer::Ptr& viewer, 
 		while(ct <= time)
 		{
 			ukf.Prediction(dt);
-			viewer->addSphere(pcl::PointXYZ(ukf.x_[0],ukf.x_[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf"+std::to_string(ct));
+            viewer->addSphere(pcl::PointXYZ(ukf.GetX()[0],ukf.GetX()[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf"+std::to_string(ct));
 			viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0-0.8*(ct/time), car.name+"_ukf"+std::to_string(ct));
 			//viewer->addArrow(pcl::PointXYZ(ukf.x_[0], ukf.x_[1],3.5), pcl::PointXYZ(ukf.x_[0]+ukf.x_[2]*cos(ukf.x_[3]),ukf.x_[1]+ukf.x_[2]*sin(ukf.x_[3]),3.5), 0, 1, 0, car.name+"_ukf_vel"+std::to_string(ct));
 			//viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0-0.8*(ct/time), car.name+"_ukf_vel"+std::to_string(ct));
