@@ -8,13 +8,14 @@ constexpr double NEAR_ZERO_VALUE = 1e-20;
 
 static double NormalizeAngle(double angle)
 {
-    while (angle > M_PI)
+    if (angle <= -M_PI || angle > M_PI)
     {
-        angle -= 2. * M_PI;
-    }
-    while (angle < -M_PI)
-    {
-        angle += 2. * M_PI;
+        angle = std::fmod(angle + M_PI, 2 * M_PI);
+        if (angle < 0)
+        {
+            angle += 2 * M_PI;
+        }
+        angle -= M_PI;
     }
     return angle;
 }
@@ -22,19 +23,18 @@ static double NormalizeAngle(double angle)
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF(Mode mode) :
-    mode_{mode}
+UKF::UKF(Mode mode)
 {
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
 
   time_us_ = -1; // not initialized
 
-  // if this is false, laser measurements will be ignored (except during init)
-  use_laser_ = true;
+  // if this is false, laser measurements will be ignored
+  use_laser_ = mode & Lidar;
 
-  // if this is false, radar measurements will be ignored (except during init)
-  use_radar_ = true;
+  // if this is false, radar measurements will be ignored
+  use_radar_ = mode & Radar;
 
   // initial state vector
   x_ = VectorXd::Zero(5);
@@ -108,14 +108,14 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     switch (meas_package.sensor_type_)
     {
         case MeasurementPackage::LASER:
-            if (mode_ != RadarOnly)
+            if (use_laser_)
             {
                 UpdateLidar(meas_package);
                 time_us_ = meas_package.timestamp_;
             }
             break;
         case MeasurementPackage::RADAR:
-            if (mode_ != LidarOnly)
+            if (use_radar_)
             {
                 UpdateRadar(meas_package);
                 time_us_ = meas_package.timestamp_;
@@ -216,12 +216,9 @@ void UKF::UpdateLidar(const MeasurementPackage& meas_package)
     }
 
     const long n_z = meas_package.raw_measurements_.size();
-    // Matrix for sigma points in measurement space
-    MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
-    // Transformation of sigma points into measurement space
-    Zsig = Xsig_pred_.topLeftCorner(n_z, Zsig.cols());
-
-    UpdateCommon(meas_package.raw_measurements_, Zsig, R_lidar_);
+    MatrixXd H = MatrixXd::Zero(n_z, n_x_);
+    H.topLeftCorner(n_z, n_z) = Eigen::Matrix2d::Identity(n_z, n_z);
+    UpdateLinearKalman(meas_package.raw_measurements_, H, R_lidar_);
 }
 
 void UKF::UpdateRadar(const MeasurementPackage& meas_package)
@@ -234,7 +231,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
     if (!is_initialized_)
     {
         // If using lidar, initialize with its first measurement
-        if (mode_ == RadarOnly)
+        if (!use_laser_)
         {
             constexpr double std_x = 1;
             constexpr double std_y = 1;
@@ -262,7 +259,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
         Zsig(2, i) = std::fabs(Zsig(0, i)) > NEAR_ZERO_VALUE ? (px * std::cos(psi) * v + py * std::sin(psi) * v) / Zsig(0, i) : 0;
     }
 
-    UpdateCommon(meas_package.raw_measurements_, Zsig, R_radar_);
+    UpdateUkf(meas_package.raw_measurements_, Zsig, R_radar_);
 }
 
 double UKF::GetNisOverThresholdPart() const
@@ -292,7 +289,30 @@ void UKF::Initialize(double x, double y, double std_x, double std_y)
     is_initialized_ = true;
 }
 
-void UKF::UpdateCommon(const VectorXd& z, const MatrixXd& Zsig, const MatrixXd& R)
+void UKF::UpdateLinearKalman(const VectorXd& z, const MatrixXd& H, const MatrixXd& R)
+{
+    VectorXd z_pred = H * x_;
+
+    // Measurement covariance matrix S
+    MatrixXd S = H * P_ * H.transpose() + R;
+
+    // Calculation of Kalman gain
+    MatrixXd K = P_ * H.transpose() * S.inverse();
+
+    // Update of state mean and covariance matrix
+    VectorXd y = z - z_pred;
+    y(1) = NormalizeAngle(y(1));
+
+    x_ += K * y;
+    P_ -= K * S * K.transpose();
+
+    // Calculation of Normalized Innovation Squared (NIS)
+    const double eps = y.transpose() * S.inverse() * y;
+    NIS_.push_back(eps);
+}
+
+
+void UKF::UpdateUkf(const VectorXd& z, const MatrixXd& Zsig, const MatrixXd& R)
 {
     const long n_z = z.size();
     VectorXd z_pred = Zsig * weights_;
@@ -333,6 +353,6 @@ void UKF::UpdateCommon(const VectorXd& z, const MatrixXd& Zsig, const MatrixXd& 
     P_ -= K * S * K.transpose();
 
     // Calculation of Normalized Innovation Squared (NIS)
-    double eps = z_res.transpose() * S.inverse() * z_res;
+    const double eps = z_res.transpose() * S.inverse() * z_res;
     NIS_.push_back(eps);
 }

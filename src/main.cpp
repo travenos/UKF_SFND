@@ -13,11 +13,11 @@ int main(int argc, char** argv)
     {
         if (std::strcmp(argv[1], "--lidar-only") == 0)
         {
-            ukf_mode = UKF::LidarOnly;
+            ukf_mode = UKF::Lidar;
         }
         else if (std::strcmp(argv[1], "--radar-only") == 0)
         {
-            ukf_mode = UKF::RadarOnly;
+            ukf_mode = UKF::Radar;
         }
     }
 
