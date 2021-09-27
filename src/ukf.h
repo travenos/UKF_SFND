@@ -10,7 +10,7 @@ class UKF
  public:
   enum Mode
   {
-      LidarAndRadar, LidarOnly, RadarOnly
+      Lidar = 1 << 0, Radar = 1 << 1, LidarAndRadar = (Lidar | Radar)
   };
   /**
    * Constructor
@@ -65,9 +65,6 @@ class UKF
 private:
   void Initialize(double x, double y, double std_x, double std_y);
   void UpdateCommon(const Eigen::VectorXd& z, const Eigen::MatrixXd& Zsig, const Eigen::MatrixXd& R);
-
-  // using lidar, radar or both measurements
-  Mode mode_;
 
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;

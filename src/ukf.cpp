@@ -8,30 +8,33 @@ constexpr double NEAR_ZERO_VALUE = 1e-20;
 
 static double NormalizeAngle(double angle)
 {
-    angle = std::fmod(angle + M_PI, 2 * M_PI);
-    if (angle < 0)
+    if (angle <= -M_PI || angle > M_PI)
     {
-        angle += 2 * M_PI;
+        angle = std::fmod(angle + M_PI, 2 * M_PI);
+        if (angle < 0)
+        {
+            angle += 2 * M_PI;
+        }
+        angle -= M_PI;
     }
-    return angle - M_PI;
+    return angle;
 }
 
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF(Mode mode) :
-    mode_{mode}
+UKF::UKF(Mode mode)
 {
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
 
   time_us_ = -1; // not initialized
 
-  // if this is false, laser measurements will be ignored (except during init)
-  use_laser_ = true;
+  // if this is false, laser measurements will be ignored
+  use_laser_ = mode & Lidar;
 
-  // if this is false, radar measurements will be ignored (except during init)
-  use_radar_ = true;
+  // if this is false, radar measurements will be ignored
+  use_radar_ = mode & Radar;
 
   // initial state vector
   x_ = VectorXd::Zero(5);
@@ -105,14 +108,14 @@ void UKF::ProcessMeasurement(const MeasurementPackage& meas_package)
     switch (meas_package.sensor_type_)
     {
         case MeasurementPackage::LASER:
-            if (mode_ != RadarOnly)
+            if (use_laser_)
             {
                 UpdateLidar(meas_package);
                 time_us_ = meas_package.timestamp_;
             }
             break;
         case MeasurementPackage::RADAR:
-            if (mode_ != LidarOnly)
+            if (use_radar_)
             {
                 UpdateRadar(meas_package);
                 time_us_ = meas_package.timestamp_;
@@ -231,7 +234,7 @@ void UKF::UpdateRadar(const MeasurementPackage& meas_package)
     if (!is_initialized_)
     {
         // If using lidar, initialize with its first measurement
-        if (mode_ == RadarOnly)
+        if (!use_laser_)
         {
             constexpr double std_x = 1;
             constexpr double std_y = 1;
